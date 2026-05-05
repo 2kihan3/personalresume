@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rock Studio - 主页面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+            background: #0a0a0a;
+        }
+        
+        .cyber-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2a 50%, #0a0a0a 100%);
+        }
+        
+        .matte-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(26,10,42,0.3) 0%, rgba(10,10,10,0.6) 100%);
+            pointer-events: none;
+        }
+        
+        .scanline {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.08) 2px,
+                rgba(0, 0, 0, 0.08) 4px
+            );
+            pointer-events: none;
+            opacity: 0.4;
+        }
+        
+        .noise {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+        
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.4;
+        }
+        
+        .orb-1 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, #ff6b35 0%, transparent 70%);
+            top: -150px;
+            left: -100px;
+        }
+        
+        .orb-2 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, #39ff14 0%, transparent 70%);
+            bottom: -200px;
+            right: -150px;
+        }
+        
+        .orb-3 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #ff1493 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .band-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            max-width: 1400px;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .band-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            z-index: 1;
+        }
+        
+        .character-hotspot {
+            position: absolute;
+            z-index: 10;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .character-hotspot:hover .hover-glow {
+            opacity: 1;
+        }
+        
+        .hover-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150%;
+            height: 150%;
+            background: radial-gradient(circle, rgba(57, 255, 20, 0.3) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .hover-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .character-hotspot:hover .hover-image {
+            opacity: 1;
+        }
+        
+        .hover-text {
+            position: absolute;
+            top: 0px;
+            left: 40%;
+            transform: translateX(-50%);
+            font-family: 'Orbitron', monospace;
+            font-size: 28px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 20;
+            letter-spacing: 2px;
+        }
+        
+        .character-hotspot:hover .hover-text {
+            opacity: 1;
+            animation: neonPulse 1.5s ease-in-out infinite alternate;
+        }
+        
+        /* 吉他手 - 橙色 */
+        .hover-text.guitarist {
+            color: #ff6b35;
+            text-shadow: 
+                0 0 5px #ff6b35,
+                0 0 10px #ff6b35,
+                0 0 20px #ff6b35,
+                0 0 40px #ff1493;
+        }
+        
+        /* 贝斯手 - 蓝色 */
+        .hover-text.bassist {
+            color: #00d4ff;
+            text-shadow: 
+                0 0 5px #00d4ff,
+                0 0 10px #00d4ff,
+                0 0 20px #00d4ff,
+                0 0 40px #0077ff;
+        }
+        
+        /* 鼓手 - 绿色 */
+        .hover-text.drummer {
+            color: #00ff88;
+            text-shadow: 
+                0 0 5px #00ff88,
+                0 0 10px #00ff88,
+                0 0 20px #00ff88,
+                0 0 40px #00ff44;
+        }
+        
+        /* 歌手 - 紫色 */
+        .hover-text.singer {
+            color: #ff00ff;
+            text-shadow: 
+                0 0 5px #ff00ff,
+                0 0 10px #ff00ff,
+                0 0 20px #ff00ff,
+                0 0 40px #8800ff;
+        }
+        
+        @keyframes neonPulse {
+            from {
+                opacity: 0.8;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .character-video-container {
+            position: absolute;
+            z-index: 50;
+            display: none;
+            pointer-events: none;
+        }
+        
+        .character-video-container.active {
+            display: block;
+        }
+        
+        .character-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+        
+        /* 全局静音按钮 */
+        .mute-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1a0a2a 0%, #2a1a3a 100%);
+            border: 2px solid #ff6b35;
+            color: #ff6b35;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 150;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+        }
+        
+        .mute-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
+        }
+        
+        .mute-btn.muted {
+            border-color: #666;
+            color: #666;
+            box-shadow: 0 0 20px rgba(102, 102, 102, 0.3);
+        }
+        
+        .modal-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 200;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+        
+        .modal-container.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            background: linear-gradient(135deg, #1a0a2a 0%, #0a0a0a 100%);
+            border: 2px solid rgba(57, 255, 20, 0.3);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(57, 255, 20, 0.2), inset 0 0 30px rgba(255, 107, 53, 0.05);
+        }
+        
+        .modal-header {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(180deg, #1a0a2a 0%, transparent 100%);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            border-bottom: 1px solid rgba(255, 107, 53, 0.3);
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-family: 'Orbitron', monospace;
+            font-size: 28px;
+            color: #39ff14;
+            text-shadow: 0 0 10px #39ff14;
+        }
+        
+        .close-btn {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 107, 53, 0.1);
+            border: 2px solid rgba(255, 107, 53, 0.4);
+            border-radius: 50%;
+            color: #ff6b35;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .close-btn:hover {
+            background: rgba(255, 107, 53, 0.3);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+            transform: scale(1.1);
+        }
+        
+        .modal-body {
+            padding: 40px;
+            max-height: calc(90vh - 150px);
+            overflow-y: auto;
+        }
+        
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .modal-body::-webkit-scrollbar-track {
+            background: rgba(57, 255, 20, 0.05);
+        }
+        
+        .modal-body::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #ff6b35 0%, #39ff14 100%);
+            border-radius: 4px;
+        }
+        
+        .modal-placeholder {
+            padding: 40px 0;
+            text-align: center;
+        }
+        
+        .modal-placeholder p {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 18px;
+            color: #ff6b35;
+            opacity: 0.8;
+        }
+        
+        .section-title {
+            font-family: 'Orbitron', monospace;
+            color: #ff6b35;
+            font-size: 24px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #ff6b35;
+            padding-bottom: 8px;
+            text-shadow: 0 0 10px #ff6b35;
+        }
+        
+        .skill-card, .project-card, .info-card {
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid rgba(255, 107, 53, 0.4);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .skill-card:hover, .project-card:hover, .info-card:hover {
+            background: rgba(255, 107, 53, 0.15);
+            border-color: rgba(255, 107, 53, 0.6);
+            transform: translateX(5px);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.2);
+        }
+        
+        .timeline-container {
+            position: relative;
+            padding-left: 30px;
+        }
+        
+        .timeline-container::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, #ff6b35 0%, #39ff14 100%);
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 32px;
+        }
+        
+        .timeline-dot {
+            position: absolute;
+            left: -26px;
+            top: 4px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b35 0%, #39ff14 100%);
+            box-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
+            border: 3px solid #1a0a2a;
+        }
+        
+        .timeline-content {
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid rgba(255, 107, 53, 0.4);
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .timeline-content:hover {
+            background: rgba(255, 107, 53, 0.15);
+            border-color: rgba(255, 107, 53, 0.6);
+            transform: translateX(5px);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.2);
+        }
+        
+        .timeline-date {
+            font-family: 'Orbitron', monospace;
+            color: #39ff14;
+            font-size: 14px;
+            text-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
+            margin-bottom: 8px;
+        }
+        
+        .timeline-company {
+            font-family: 'Orbitron', monospace;
+            color: #ff6b35;
+            font-size: 18px;
+            margin-bottom: 4px;
+            text-shadow: 0 0 5px rgba(255, 107, 53, 0.3);
+        }
+        
+        .timeline-position {
+            color: #8ed1fc;
+            font-style: italic;
+            margin-bottom: 12px;
+        }
+        
+        .timeline-desc {
+            color: #e0e0e0;
+            line-height: 1.8;
+            margin-bottom: 8px;
+        }
+        
+        .timeline-highlight {
+            background: rgba(255, 107, 53, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            color: #ff6b35;
+            font-weight: bold;
+            line-height: 1.8;
+        }
+        
+        .skill-card h4, .project-card h4, .info-card h4 {
+            font-family: 'Orbitron', monospace;
+            color: #ff6b35;
+            margin-bottom: 12px;
+            font-size: 18px;
+            text-shadow: 0 0 5px #ff6b35;
+        }
+        
+        .skill-card p, .project-desc, .info-card p {
+            font-family: 'Rajdhani', sans-serif;
+            color: #e0e0e0;
+            line-height: 1.8;
+            font-size: 16px;
+        }
+        
+        .project-detail {
+            margin-top: 16px;
+            padding-left: 16px;
+            border-left: 2px solid #ff6b35;
+        }
+        
+        .project-detail h5 {
+            font-family: 'Orbitron', monospace;
+            color: #8ed1fc;
+            margin-bottom: 8px;
+            font-size: 16px;
+            text-shadow: 0 0 5px #8ed1fc;
+        }
+        
+        .project-detail ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .project-detail li {
+            font-family: 'Rajdhani', sans-serif;
+            color: #c0c0c0;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .project-detail li:before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #ff6b35;
+        }
+        
+        .project-highlight {
+            background: rgba(142, 209, 252, 0.1);
+            border-left: 3px solid #8ed1fc;
+            padding: 16px;
+            margin-top: 16px;
+            border-radius: 5px;
+            color: #e0e0e0;
+            line-height: 1.8;
+            font-family: 'Rajdhani', sans-serif;
+        }
+        
+        .company {
+            color: #8ed1fc;
+            font-weight: bold;
+            margin-bottom: 4px !important;
+        }
+        
+        .position {
+            color: #ff6b35;
+            font-style: italic;
+            margin-bottom: 8px !important;
+        }
+        
+        .highlight {
+            background: rgba(255, 107, 53, 0.2);
+            padding: 8px;
+            border-radius: 5px;
+            margin-top: 8px;
+            color: #ff6b35 !important;
+            font-weight: bold;
+        }
+        
+        .info-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .info-card li {
+            font-family: 'Rajdhani', sans-serif;
+            color: #c0c0c0;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .info-card li:before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #ff6b35;
+        }
+        
+        .info-card a {
+            color: #8ed1fc;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .info-card a:hover {
+            color: #ff6b35;
+            text-decoration: underline;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .info-item {
+            color: #e0e0e0;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 16px;
+            padding: 8px 12px;
+            background: rgba(255, 107, 53, 0.05);
+            border-radius: 6px;
+            border-left: 3px solid rgba(57, 255, 20, 0.5);
+        }
+        
+        .education-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: rgba(255, 107, 53, 0.05);
+            border-radius: 8px;
+        }
+        
+        .education-school {
+            font-family: 'Orbitron', monospace;
+            color: #ff6b35;
+            font-size: 16px;
+            text-shadow: 0 0 5px rgba(255, 107, 53, 0.3);
+        }
+        
+        .education-major {
+            font-family: 'Rajdhani', sans-serif;
+            color: #8ed1fc;
+            font-style: italic;
+            font-size: 16px;
+        }
+        
+        .education-time {
+            font-family: 'Orbitron', monospace;
+            color: #39ff14;
+            font-size: 14px;
+            text-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
+        }
+        
+        .faq-item {
+            margin-bottom: 20px;
+        }
+        
+        .faq-item h5 {
+            color: #ff6b35;
+            font-family: 'Orbitron', monospace;
+            margin-bottom: 12px;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .faq-item h5::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #ff6b35 0%, #39ff14 100%);
+            border-radius: 2px;
+        }
+        
+        .faq-answer {
+            color: #e0e0e0;
+            line-height: 1.8;
+            margin-bottom: 12px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 16px;
+        }
+        
+        .faq-company {
+            color: #39ff14;
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
+            font-weight: bold;
+        }
+        
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .skill-tag {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(57, 255, 20, 0.1) 100%);
+            border: 1px solid rgba(255, 107, 53, 0.4);
+            color: #ff6b35;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-family: 'Orbitron', monospace;
+            font-size: 14px;
+            text-shadow: 0 0 8px rgba(255, 107, 53, 0.3);
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.1);
+        }
+        
+        .skill-tag:hover {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.25) 0%, rgba(57, 255, 20, 0.15) 100%);
+            border-color: rgba(255, 107, 53, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+        }
+        
+        .tabs-container {
+            margin-bottom: 20px;
+        }
+        
+        .tabs-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 107, 53, 0.3);
+            padding-bottom: 10px;
+            position: relative;
+        }
+        
+        .tab-title {
+            flex: 1;
+            text-align: center;
+            font-family: 'Orbitron', monospace;
+            font-size: 18px;
+            color: #ff6b35;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 10px;
+        }
+        
+        .tab-title:hover {
+            color: #39ff14;
+            text-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
+        }
+        
+        .tab-title.active {
+            color: #39ff14;
+            text-shadow: 0 0 12px rgba(57, 255, 20, 0.5);
+            font-size: 20px;
+        }
+        
+        .tab-divider {
+            width: 2px;
+            height: 30px;
+            background: linear-gradient(180deg, rgba(255, 107, 53, 0.8) 0%, rgba(57, 255, 20, 0.8) 100%);
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
+        }
+        
+        .tab-panel {
+            display: none;
+        }
+        
+        .tab-panel.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .neon-border {
+            position: absolute;
+            top: 5%;
+            left: 5%;
+            right: 5%;
+            bottom: 5%;
+            border: 2px solid rgba(255, 107, 53, 0.2);
+            pointer-events: none;
+            opacity: 0.6;
+        }
+        
+        .neon-border-2 {
+            position: absolute;
+            top: 6%;
+            left: 6%;
+            right: 6%;
+            bottom: 6%;
+            border: 1px solid rgba(57, 255, 20, 0.15);
+            pointer-events: none;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="cyber-bg" id="homeContainer">
+        <div class="glow-orb orb-1" id="orb1"></div>
+        <div class="glow-orb orb-2" id="orb2"></div>
+        <div class="glow-orb orb-3" id="orb3"></div>
+        
+        <div class="matte-overlay"></div>
+        <div class="scanline"></div>
+        <div class="noise"></div>
+        
+        <div class="neon-border"></div>
+        <div class="neon-border-2"></div>
+        
+        <!-- 全局静音按钮 -->
+        <button class="mute-btn" id="muteBtn">🔊</button>
+        
+        <!-- 音频元素 -->
+        <audio id="guitaristAudio" src="./public/music/guitar_sound.mp3" preload="auto"></audio>
+        <audio id="bassistAudio" src="./public/music/bass_sound.mp3" preload="auto"></audio>
+        <audio id="drummerAudio" src="./public/music/drummer_sound.mp3" preload="auto"></audio>
+        <audio id="singerAudio" src="./public/music/singer_sound.mp3" preload="auto"></audio>
+        
+        <div class="band-container">
+            <img src="./public/image/home_main_band.png" alt="Rock Band" class="band-image" id="bandImage">
+            
+            <!-- 4个角色热区 - 这些坐标需要根据实际图片调整 -->
+            <!-- 吉他手 (左1) -->
+            <div class="character-hotspot" 
+                 id="guitarist" 
+                 data-character="guitarist"
+                 style="top: 9%; left: 8%; width: 31%; height: 88%;">
+                <div class="hover-text guitarist" style="top: 0px; left: 40%; transform: translateX(-50%);">个人简介</div>
+                <div class="hover-glow"></div>
+                <img src="./public/image/guitarist_white.png" alt="Guitarist" class="hover-image"
+                     style="transform: scale(1); transform-origin: center center; top: 0; left: 0; width: 100%; height: 100%; object-fit: fill; object-position: center center;">
+                
+                <!-- 视频容器 -->
+                <div class="character-video-container" id="guitaristVideoContainer"
+                     style="top: 0; left: 0; width: 100%; height: 100%;">
+                    <video class="character-video" id="guitaristVideo" muted playsinline
+                           style="transform: scale(1); transform-origin: center center; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; object-position: center center;"></video>
+                </div>
+            </div>
+            
+            <!-- 贝斯手 (左2) -->
+            <div class="character-hotspot" 
+                 id="bassist" 
+                 data-character="bassist"
+                 style="top: 15%; left: 22%; width: 33%; height: 80%;">
+                <div class="hover-text bassist" style="top: -30px; left: 48%; transform: translateX(-50%);">工作经历</div>
+                <div class="hover-glow"></div>
+                <img src="./public/image/bassist_white.png" alt="Bassist" class="hover-image"
+                     style="transform: scale(1); transform-origin: center center; top: 0; left: 0; width: 100%; height: 100%; object-fit: fill; object-position: center center;">
+                
+                <!-- 视频容器 -->
+                <div class="character-video-container" id="bassistVideoContainer"
+                     style="top: 0; left: 0; width: 100%; height: 100%;">
+                    <video class="character-video" id="bassistVideo" muted playsinline
+                           style="transform: scale(1); transform-origin: center center; top: 0; left: 0; width: 80%; height: 100%; object-fit: fill; object-position: center center;"></video>
+                </div>
+            </div>
+            
+            <!-- 鼓手 (中间) -->
+            <div class="character-hotspot" 
+                 id="drummer" 
+                 data-character="drummer"
+                 style="top: 22%; left: 54%; transform: translateX(-50%); width: 25%; height: 50%;">
+                <div class="hover-text drummer" style="top: -40px; left: 62%; transform: translateX(-50%);">项目概述</div>
+                <div class="hover-glow"></div>
+                <img src="./public/image/drummer_white.png" alt="Drummer" class="hover-image"
+                     style="transform: scale(1); transform-origin: center center; top: 0; left: 0; width: 100%; height: 100%; object-fit: fill; object-position: center center;">
+                
+                <!-- 视频容器 -->
+                <div class="character-video-container" id="drummerVideoContainer"
+                     style="top: 0; left: 0; width: 100%; height: 100%;">
+                    <video class="character-video" id="drummerVideo" muted playsinline
+                           style="transform: scale(1); transform-origin: center center; top: 0; left: 0; width: 100%; height: 100%; object-fit: fill; object-position: center center;"></video>
+                </div>
+            </div>
+            
+            <!-- 歌手 (右1) -->
+            <div class="character-hotspot" 
+                 id="singer" 
+                 data-character="singer"
+                 style="top: 10%; right: 12%; width: 20%; height: 76%;">
+                <div class="hover-text singer" style="top: -6px; left: 53%; transform: translateX(-50%);">更多信息</div>
+                <div class="hover-glow"></div>
+                <img src="./public/image/singer_white.png" alt="Singer" class="hover-image"
+                     style="transform: scale(1); transform-origin: center center; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; object-position: center center;">
+                
+                <!-- 视频容器 -->
+                <div class="character-video-container" id="singerVideoContainer"
+                     style="top: 0; left: 0; width: 100%; height: 100%;">
+                    <video class="character-video" id="singerVideo" muted playsinline
+                           style="transform: scale(1); transform-origin: center center; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; object-position: center center;"></video>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 弹窗层 -->
+    <div class="modal-container" id="modalContainer">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle" style="font-family: 'Orbitron', monospace; color: #39ff14; text-shadow: 0 0 10px #39ff14; font-size: 32px;">角色名称</h2>
+                <button class="close-btn" id="closeModal">×</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="modal-placeholder">
+                    <p>内容待添加...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentCharacter = null;
+        let currentVideo = null;
+        let currentAudio = null;
+        let isMuted = false;
+        
+        // 角色配置
+        const characterConfig = {
+            guitarist: {
+                video: './public/video/guitarist_playing.webm',
+                audio: 'guitaristAudio',
+                title: '个人简介',
+                content: `
+                    <div class="tags-container">
+                        <span class="skill-tag">Agent</span>
+                        <span class="skill-tag">数据中台</span>
+                        <span class="skill-tag">电商中后台</span>
+                        <span class="skill-tag">复杂业务系统</span>
+                        <span class="skill-tag">小程序</span>
+                    </div>
+                    <div class="skill-card">
+                        <h4>🎯 LLM与智能体架构设计</h4>
+                        <p>有0-1落地垂直领域Agent经验，独立进行需求分析与实现方式判断，从智能体与工作流编排、记忆管理、评估与优化等方面完成智能体的整体架构设计。</p>
+                    </div>
+                    <div class="skill-card">
+                        <h4>💡 PROMPT与RAG的设计与调优</h4>
+                        <p>通过Prompt Engineering（CRISPE、CoT、Few-shot等）进行模型效果调优，掌握RAG全链路优化，能从数据资料优化，Query Rewriting、Chunking、混合检索、Rerank等手段，有效降低模型幻觉，提升回答的准确率与召回率。</p>
+                    </div>
+                    <div class="skill-card">
+                        <h4>🏗️ 0-1复杂系统与数据中台经验</h4>
+                        <p>有2年+传统产品经验，包括0-1复杂B端系统（无人机管理）、类电商平台（酒店投资行业、旧衣回收）项目经验，另有0-1数据中台经验，具有数据字典定义及数据在业务看板中的应用经验，能够快速学习数据治理，实现高质量语料的生成。</p>
+                    </div>
+                    <div class="skill-card">
+                        <h4>📚 持续学习与技术视野拓展</h4>
+                        <p>学习吴恩达LLM/RAG等系列课程，能够使用Coze/Dify/longGraph等工具快速实现Demo验证。能够通过AI工具实现前端Demo，能够完成基础Vibe Coding。另外持续关注AI在各行业的落地情况，学习LongGraph、LongChain、CrewAI等进阶框架，对AI的能力边界有清晰认知。</p>
+                    </div>
+                `,
+                videoContainer: 'guitaristVideoContainer',
+                videoElement: 'guitaristVideo'
+            },
+            bassist: {
+                video: './public/video/bassist_playing.webm',
+                audio: 'bassistAudio',
+                title: '工作经历',
+                content: `
+                    <div class="timeline-container">
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">2025.12~至今</div>
+                                <h4 class="timeline-company">杭州肯非（裕润）信息科技有限公司</h4>
+                                <p class="timeline-position">产品经理</p>
+                                <p class="timeline-desc">萌兔小程序前端重构，白鲸鱼小程序及后台业务优化，数据中台0-1建设。</p>
+                                <p class="timeline-highlight">萌兔小程序重构后月订单量提升约50%，转化率提升10%。</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">2025.01~2025.08</div>
+                                <h4 class="timeline-company">杭州哲大慧商科技有限公司</h4>
+                                <p class="timeline-position">产品经理</p>
+                                <p class="timeline-desc">小程序，后台及营销中台0-1设计，实现业务流程线上化；0-1Agent设计。</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">2023.09~2024.04</div>
+                                <h4 class="timeline-company">浙江星空通用航空有限公司</h4>
+                                <p class="timeline-position">产品经理</p>
+                                <p class="timeline-desc">0-1无人机管理平台及数据中台设计，实现设备+任务的全流程管理。</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">2023.03~2023.08</div>
+                                <h4 class="timeline-company">杭州领见科技有限公司</h4>
+                                <p class="timeline-position">产品经理</p>
+                                <p class="timeline-desc">负责从需求调研到项目落地的全流程，包括部分售前及售后工作。</p>
+                                <p class="timeline-highlight">领见耘SAAS化及2.0迭代；多个农业管理平台；竹林病虫害识别小程序(视觉识别)。</p>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                videoContainer: 'bassistVideoContainer',
+                videoElement: 'bassistVideo'
+            },
+            drummer: {
+                video: './public/video/drummer_playing.webm',
+                audio: 'drummerAudio',
+                title: '项目概述',
+                content: `
+                    <div class="tabs-container">
+                        <div class="tabs-nav">
+                            <div class="tab-title active" data-tab="tab1">公司项目</div>
+                            <div class="tab-divider"></div>
+                            <div class="tab-title" data-tab="tab2">个人项目</div>
+                        </div>
+                        <div class="tabs-content">
+                            <div class="tab-panel active" id="tab1">
+                                <div class="project-card">
+                                    <h4>🌟 天玑 Agent（酒店投资与酒店运营管理垂直领域）</h4>
+                                    <p class="project-desc">针对酒店投资领域信息壁垒高、咨询反馈慢的痛点，主导研发首个行业垂直场景Agent，旨在将传统的专家咨询范式转化为7×24h的AI智能辅助决策。</p>
+                                    <div class="project-detail">
+                                        <h5>🔧 RAG架构深度调优与幻觉治理</h5>
+                                        <ul>
+                                            <li>多维文档预处理优化：对非结构化行业文档进行数据清洗与结构化处理，并通过元数据注入提高召回质量。</li>
+                                            <li>分块(Chunking)：根据文档内容，采用基于语义逻辑的动态分块+文档分隔符分块，并设置滑动窗口保证上下文连贯，保证了超长段落被切分后的召回率。</li>
+                                            <li>查询重写(Query Rewriting)：针对用户模糊提问，设计Query Rewriting节点，将用户意图转化为标准的专业检索指令，提升了复杂意图下的检索关联度。</li>
+                                            <li>混合检索优化：针对酒店投资行业专有名词(RevPar、GOP等)检索不精准问题，采用BM25+混合检索方案，通过加权排序提高了相关片段的命中率和召回率。</li>
+                                        </ul>
+                                    </div>
+                                    <div class="project-detail">
+                                        <h5>🤖 Agent工作流与交互设计</h5>
+                                        <ul>
+                                            <li>Prompt Engineering：通过CRISPE、RTF结构对不同LLM节点进行提示词调优，针对领域分类、Query Rewritng等关键节点进行精细化Prompt设计，并以few-shot提高模型输出的标准化程度。</li>
+                                            <li>多工作流设计：结合平台业务和问答场景，设计了包含MCP调用、意图识别、知识库检索、结构化输出等多个工作流，方便Agent基于用户输入进行判断与调用。</li>
+                                        </ul>
+                                    </div>
+                                    <p style="margin-top: 16px; text-align: center;">
+                                        <a href="https://ai.feishu.cn/wiki/NNd2wkRlfinIESkBM87ceUHlnnC?from=from_copylink" target="_blank" style="color: #39ff14; font-family: 'Orbitron', monospace; text-shadow: 0 0 8px rgba(57, 255, 20, 0.3); font-size: 16px;">👉 天玑Agent产品文档</a>
+                                    </p>
+                                </div>
+                                <div class="project-card">
+                                    <h4>📊 数据中台（多行业）</h4>
+                                    <p class="project-desc">针对不同行业的数据管理需求，两次主导0-1数据中台建设，提供灵活数据分析能力及标准化数据管理能力，方便未来实现AI智能化运营。</p>
+                                    <div class="project-detail">
+                                        <h5>🚁 无人机数据中台</h5>
+                                        <ul>
+                                            <li>实施指标监测预警：对无人机、救援车等硬件设备进行数据采集与健康度管理，通过动态阈值实现自动预警，保证硬件设备在多种作业环境下的稳定性与可靠性。</li>
+                                            <li>数仓设计：对动态数据与静态数据进行分离式存储，对设备实现双维度管理，保证了全时段设备可用率和任务响应速度。</li>
+                                        </ul>
+                                    </div>
+                                    <div class="project-detail">
+                                        <h5>♻️ 旧衣回收数据中台</h5>
+                                        <ul>
+                                            <li>三维渠道映射体系：设计端口、功能、渠道来源的三维流量数据模型，实现了对小程序多平台数据的集中管理，为运营提供了精准的数据指导，同时为AI智能化运营打下基础。</li>
+                                            <li>数据字典设计：通过数据库到前端的数据映射，保证了不影响业务后台正常运行效率的情况下，灵活多变的数据指标分析能力，解决复杂多维度数据分析需求。</li>
+                                        </ul>
+                                    </div>
+                                    <p class="project-highlight">
+                                        <strong>项目成果：</strong><br>
+                                        · 无人机：降低设备损耗成本约20%；实现24h任务响应。<br>
+                                        · 旧衣回收：每周运营人员的数据拉取需求减少50%，运营动作响应时间平均减少1天。
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="tab-panel" id="tab2">
+                                <div class="project-card">
+                                    <h4>🤖 AI项目学习指导Agent/Skill</h4>
+                                    <p class="project-desc">自己在学习github开源项目时，由于没有技术背景，步履维艰。故突发奇想开发一个能够一键进行git clone、代码review、项目学习指导的简单agent。</p>
+                                    <div class="project-detail">
+                                        <h5>🧩 基于LongGraph的Agent</h5>
+                                        <ul>
+                                            <li>基于LongGraph技术中，node节点的可循环特性，开发了Plan-Execute-Replan-Summary为核心流程的Agent。</li>
+                                        </ul>
+                                    </div>
+                                    <div class="project-detail">
+                                        <h5>�️ Tools开发与调用</h5>
+                                        <ul>
+                                            <li>开发了gitclone、project_analyzer、read_file三个核心工具，供Agent调用以实现gitclone、项目架构分析、核心文件理解三个核心任务。</li>
+                                        </ul>
+                                    </div>
+                                    <div class="project-detail">
+                                        <h5>🏗️ 项目架构分析设计</h5>
+                                        <ul>
+                                            <li>基于Agent常见的实现形式，规定了在进行项目理解时，从工具层（tools、skills、mcp等）、流程层（workflow、核心代码文件）、函数调用与执行层（agent.py、main.py、app.py或类似核心文件）三个层级进行项目架构拆分，实现了从工具理解、流程分析到项目整体分析的逻辑闭环。</li>
+                                        </ul>
+                                    </div>
+                                    <div class="project-detail">
+                                        <h5>🚀 项目优化</h5>
+                                        <ul>
+                                            <li>完成Agent开发后，由于LLM能力有限，当项目复杂度过高时，无法完整的解析项目文件目录，因此agent能力到达了边界。</li>
+                                            <li>想到IDE工具本身就有项目目录读取能力，因此将原有的Agent能力优化成为一个skill，能够基于IDE工具提供的项目结构目录更完整的理解项目。</li>
+                                            <li>通过json、py、md等多种形式的文档读取支持，可以基于原作者提供的readme文件更快的理解项目各层级的实现方式与函数调用。</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="project-card" style="margin-top: 24px;">
+                                    <h4>📱 自媒体创作者工作台</h4>
+                                    <p class="project-desc">通过Vibe Coding与API调用的形式，实现了一个简单的自媒体创作工作台。</p>
+                                    <div class="project-detail">
+                                        <h5>💻 代码实现</h5>
+                                        <ul>
+                                            <li>通过Vibe Coding，实现前端+API+后端的完整web端项目，包括创作场景切换、形式切换和API管理三个核心功能。</li>
+                                        </ul>
+                                    </div>
+                                    <div class="project-detail">
+                                        <h5>🤖 模型API调用</h5>
+                                        <ul>
+                                            <li>接入Deepseek、通义万相wan2.6的API，实现了web端从发送创作prompt指令到回调生成结果的闭环。</li>
+                                        </ul>
+                                    </div>
+                                    <div class="project-detail">
+                                        <h5>🚀 后续学习迭代方向</h5>
+                                        <ul>
+                                            <li>通过Coze等平台快速开发简单workflow或agent，通过webhook形式实现web页面对外部agent的调用。</li>
+                                            <li>增加RAG支持，通过RAG实现个人创作需求模版的存储与调用。</li>
+                                            <li>增加项目记录功能，通过项目管理实现未来同一项目需求下的后续内容生成或二创，可能设计记忆系统设计和session管理。</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                videoContainer: 'drummerVideoContainer',
+                videoElement: 'drummerVideo'
+            },
+            singer: {
+                video: './public/video/singer_playing.webm',
+                audio: 'singerAudio',
+                title: '更多信息',
+                content: `
+                    <div class="info-card">
+                        <h4>👤 基本信息</h4>
+                        <div class="info-grid">
+                            <div class="info-item">姓名：高涵</div>
+                            <div class="info-item">电话：15840149228</div>
+                            <div class="info-item">邮箱：kyriehan0405@163.com</div>
+                            <div class="info-item">所在地：杭州</div>
+                            <div class="info-item">当前状态：已经离职，随时到岗</div>
+                            <div class="info-item">期望城市：杭州、上海、南京、无锡</div>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <h4>🎓 教育经历</h4>
+                        <div class="education-header">
+                            <span class="education-school">沈阳理工大学（全日制本科）</span>
+                            <span class="education-major">通信工程</span>
+                            <span class="education-time">2018.09~2022.07</span>
+                        </div>
+                        <ul>
+                            <li>英语 CET-6</li>
+                            <li>班长、院学生会副部长、校艺术团成员</li>
+                            <li>能基于AI辅助看懂前端+部分后端代码</li>
+                        </ul>
+                    </div>
+                    <div class="info-card">
+                        <h4>❓ 常见问题</h4>
+                        <div class="faq-item">
+                            <h5>问题1：为什么离职/为什么工作经历时间都很短？</h5>
+                            <p class="faq-answer">
+                                <span class="faq-company">领见科技：</span>由于是项目制，离职前已经完成了我负责的所有项目，但是由于当年的市场环境，公司难以获取更多新项目，因此主动离职，据悉一段时间后，所在部门业务完全关闭。
+                            </p>
+                            <p class="faq-answer">
+                                <span class="faq-company">星耀航空：</span>同样是完成了后台系统和数据中台的开发与上线。由于配套无人直升机等硬件设备迟迟没有提供，无法实现系统软硬结合，无法获取真实数据反馈，难以确认产品迭代方向；另老板提出抽象要求，团队讨论一致认为是伪需求，但项目主管（公司副总）是老板的死士，因此没有沟通的余地，于是自行辞职。
+                            </p>
+                            <p class="faq-answer">
+                                <span class="faq-company">哲大慧商：</span>老板与合伙人意见分歧，最终决定停止软件部分开发，辞退了所有员工。
+                            </p>
+                            <p class="faq-answer">
+                                <span class="faq-company">肯菲裕润：</span>个人完成数据中台1.0版本，采取专业的中间层数据映射保证数据及时性与数据库稳定，老板却要数据纯黑盒的实现形式，我带着技术与老板多次沟通无果，故辞职。
+                            </p>
+                        </div>
+                        <div class="faq-item">
+                            <h5>问题2：现在在看什么样的机会？</h5>
+                            <p class="faq-answer">
+                                目前最期望的是能找到和ai相关的产品岗位，不限于agent定制开发、行业+ai、ai工具平台等多种形式；另也接受电商等行业SaaS公司的岗位，毕竟SaaS的用户数据本身就是未来向AI转型的重要资产。
+                            </p>
+                        </div>
+                    </div>
+                `,
+                videoContainer: 'singerVideoContainer',
+                videoElement: 'singerVideo'
+            }
+        };
+        
+        // 初始化动画
+        function initAnimations() {
+            gsap.to('#orb1', {
+                x: 40, y: -40, scale: 1.15, duration: 10, repeat: -1, yoyo: true, ease: "sine.inOut"
+            });
+            gsap.to('#orb2', {
+                x: -30, y: 30, scale: 0.9, duration: 10, repeat: -1, yoyo: true, ease: "sine.inOut", delay: 3
+            });
+            gsap.to('#orb3', {
+                x: 30, y: 40, scale: 1.1, duration: 10, repeat: -1, yoyo: true, ease: "sine.inOut", delay: 5
+            });
+            
+            gsap.fromTo('#bandImage', 
+                { opacity: 0, scale: 0.9 },
+                { opacity: 1, scale: 1, duration: 1, ease: "power2.out" }
+            );
+        }
+        
+        // 播放角色视频
+        function playCharacterVideo(characterId) {
+            // 先清理之前的所有状态
+            if (currentVideo) {
+                currentVideo.pause();
+                currentVideo = null;
+            }
+            
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio.onended = null;
+                currentAudio = null;
+            }
+            
+            document.querySelectorAll('.character-video-container').forEach(vc => {
+                vc.classList.remove('active');
+            });
+            
+            // 设置新的状态
+            currentCharacter = characterId;
+            const config = characterConfig[characterId];
+            const videoContainer = document.getElementById(config.videoContainer);
+            const video = document.getElementById(config.videoElement);
+            const audio = document.getElementById(config.audio);
+            const characterHotspot = document.getElementById(characterId);
+            const hoverImage = characterHotspot.querySelector('.hover-image');
+            
+            // 隐藏角色图片
+            hoverImage.style.opacity = '0';
+            
+            videoContainer.style.position = 'absolute';
+            videoContainer.style.top = '0';
+            videoContainer.style.left = '0';
+            videoContainer.style.width = '100%';
+            videoContainer.style.height = '100%';
+            videoContainer.style.pointerEvents = 'none';
+            
+            video.src = config.video;
+            videoContainer.classList.add('active');
+            currentVideo = video;
+            currentAudio = audio;
+            
+            // 确保视频始终muted
+            video.muted = true;
+            
+            // 设置音频的静音状态
+            audio.muted = isMuted;
+            
+            // 清理之前的事件监听器（再次确保
+            audio.onended = null;
+            
+            // 同步播放视频和音频
+            video.play().catch(e => {
+                console.log('视频播放需要用户交互');
+                showModal(characterId);
+            });
+            
+            audio.currentTime = 0;
+            audio.play().catch(e => {
+                console.log('音频播放需要用户交互');
+            });
+            
+            // 音频结束后显示弹窗（确保音频播完）
+            audio.onended = () => {
+                showModal(characterId);
+            };
+        }
+        
+        // 显示弹窗
+        function showModal(characterId) {
+            const config = characterConfig[characterId];
+            const modalContainer = document.getElementById('modalContainer');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            const characterHotspot = document.getElementById(characterId);
+            const hoverImage = characterHotspot.querySelector('.hover-image');
+            
+            if (currentVideo) {
+                currentVideo.pause();
+                currentVideo = null;
+            }
+            
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+            }
+            
+            document.querySelectorAll('.character-video-container').forEach(vc => {
+                vc.classList.remove('active');
+            });
+            
+            // 恢复角色图片显示
+            hoverImage.style.opacity = '';
+            
+            modalTitle.textContent = config.title;
+            modalBody.innerHTML = config.content;
+            modalContainer.classList.add('active');
+            
+            gsap.fromTo('.modal-content', 
+                { opacity: 0, scale: 0.8, y: 30 },
+                { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: "elastic.out(1, 0.5)" }
+            );
+            
+            // 初始化tab切换
+            initTabs();
+        }
+        
+        // 关闭弹窗
+        function closeModal() {
+            const modalContainer = document.getElementById('modalContainer');
+            
+            // 先清理音频和视频
+            if (currentVideo) {
+                currentVideo.pause();
+                currentVideo = null;
+            }
+            
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+            }
+            
+            // 然后关闭弹窗和清理其他状态
+            modalContainer.classList.remove('active');
+            currentCharacter = null;
+        }
+        
+        // 切换全局静音
+        function toggleMute() {
+            isMuted = !isMuted;
+            const muteBtn = document.getElementById('muteBtn');
+            
+            if (isMuted) {
+                muteBtn.textContent = '🔇';
+                muteBtn.classList.add('muted');
+                // 静音所有音频
+                document.querySelectorAll('audio').forEach(audio => {
+                    audio.muted = true;
+                });
+            } else {
+                muteBtn.textContent = '🔊';
+                muteBtn.classList.remove('muted');
+                // 只有当前播放的音频取消静音
+                if (currentAudio) {
+                    currentAudio.muted = false;
+                }
+            }
+        }
+        
+        // 初始化tab切换
+        function initTabs() {
+            const tabTitles = document.querySelectorAll('.tab-title');
+            const tabPanels = document.querySelectorAll('.tab-panel');
+            
+            tabTitles.forEach(title => {
+                title.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    
+                    // 移除所有active类
+                    tabTitles.forEach(t => t.classList.remove('active'));
+                    tabPanels.forEach(p => p.classList.remove('active'));
+                    
+                    // 添加当前active类
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+        }
+        
+        // 绑定事件
+        document.querySelectorAll('.character-hotspot').forEach(hotspot => {
+            hotspot.addEventListener('click', function() {
+                const characterId = this.dataset.character;
+                playCharacterVideo(characterId);
+            });
+        });
+        
+        document.getElementById('closeModal').addEventListener('click', closeModal);
+        document.getElementById('muteBtn').addEventListener('click', toggleMute);
+        
+        // 点击弹窗背景关闭
+        document.getElementById('modalContainer').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+        
+
+        
+        // 键盘ESC关闭弹窗
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+        
+        window.addEventListener('load', initAnimations);
+    </script>
+</body>
+</html>

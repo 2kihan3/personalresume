@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rock Studio - Connect & Play</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .cyber-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #0a0a0a;
+            overflow: hidden;
+        }
+        
+        .matte-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #111111 0%, #0a0a0a 50%, #050505 100%);
+            mix-blend-mode: multiply;
+        }
+        
+        .noise {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.08;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+        
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+        }
+        
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #ff6b35 0%, transparent 70%);
+            top: -100px;
+            left: -100px;
+        }
+        
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, #39ff14 0%, transparent 70%);
+            bottom: -150px;
+            right: -150px;
+        }
+        
+        .orb-3 {
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, #ff1493 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .neon-line {
+            position: absolute;
+            opacity: 0.6;
+        }
+        
+        .text-glow {
+            text-shadow: 
+                0 0 10px #39ff14,
+                0 0 20px #39ff14,
+                0 0 40px #39ff14,
+                0 0 80px #39ff14;
+        }
+        
+        .text-glow-orange {
+            text-shadow: 
+                0 0 10px #ff6b35,
+                0 0 20px #ff6b35,
+                0 0 40px #ff6b35;
+        }
+        
+        .line-glow {
+            filter: drop-shadow(0 0 5px #39ff14) drop-shadow(0 0 10px #39ff14) drop-shadow(0 0 20px #39ff14);
+        }
+        
+        .scanline {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.1) 2px,
+                rgba(0, 0, 0, 0.1) 4px
+            );
+            pointer-events: none;
+            opacity: 0.3;
+        }
+        
+        .grid-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(57, 255, 20, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(57, 255, 20, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+        }
+        
+        .guitar-container {
+            position: absolute;
+            top: 18%;
+            left: 18%;
+            opacity: 0;
+        }
+        
+        .guitar-img {
+            height: 500px;
+            width: auto;
+            filter: drop-shadow(0 0 20px rgba(255, 107, 53, 0.5));
+        }
+        
+        .amp-container {
+            position: absolute;
+            bottom: 10%;
+            right: 8%;
+            opacity: 0;
+        }
+        
+        .amp-img {
+            height: 500px;
+            width: auto;
+            filter: drop-shadow(0 0 20px rgba(57, 255, 20, 0.5));
+        }
+        
+        .linehead-container {
+            position: absolute;
+            z-index: 10;
+            opacity: 0;
+        }
+        
+        .linehead-img {
+            width: 15px;
+            height: auto;
+            filter: drop-shadow(0 0 10px #39ff14);
+        }
+        
+        .center-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 20;
+        }
+        
+        .footer-text {
+            position: absolute;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            opacity: 0;
+        }
+        
+        .neon-border {
+            position: absolute;
+            border: 2px solid;
+            opacity: 0;
+        }
+        
+        .neon-border-1 {
+            top: 5%;
+            left: 5%;
+            right: 5%;
+            bottom: 5%;
+            border-color: rgba(255, 107, 53, 0.3);
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.2), inset 0 0 10px rgba(255, 107, 53, 0.1);
+        }
+        
+        .neon-border-2 {
+            top: 7%;
+            left: 7%;
+            right: 7%;
+            bottom: 7%;
+            border-color: rgba(57, 255, 20, 0.2);
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.15), inset 0 0 10px rgba(57, 255, 20, 0.08);
+        }
+        
+        .corner-accent {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            opacity: 0;
+        }
+        
+        .corner-tl {
+            top: 5%;
+            left: 5%;
+            border-top: 3px solid #ff6b35;
+            border-left: 3px solid #ff6b35;
+            box-shadow: -5px -5px 15px rgba(255, 107, 53, 0.4);
+        }
+        
+        .corner-tr {
+            top: 5%;
+            right: 5%;
+            border-top: 3px solid #39ff14;
+            border-right: 3px solid #39ff14;
+            box-shadow: 5px -5px 15px rgba(57, 255, 20, 0.4);
+        }
+        
+        .corner-bl {
+            bottom: 5%;
+            left: 5%;
+            border-bottom: 3px solid #39ff14;
+            border-left: 3px solid #39ff14;
+            box-shadow: -5px 5px 15px rgba(57, 255, 20, 0.4);
+        }
+        
+        .corner-br {
+            bottom: 5%;
+            right: 5%;
+            border-bottom: 3px solid #ff6b35;
+            border-right: 3px solid #ff6b35;
+            box-shadow: 5px 5px 15px rgba(255, 107, 53, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="cyber-bg" id="mainContainer">
+        <div class="grid-pattern"></div>
+        <div class="glow-orb orb-1" id="orb1"></div>
+        <div class="glow-orb orb-2" id="orb2"></div>
+        <div class="glow-orb orb-3" id="orb3"></div>
+        
+        <div class="matte-overlay"></div>
+        
+        <div class="neon-border neon-border-1" id="neonBorder1"></div>
+        <div class="neon-border neon-border-2" id="neonBorder2"></div>
+        
+        <div class="corner-accent corner-tl" id="cornerTL"></div>
+        <div class="corner-accent corner-tr" id="cornerTR"></div>
+        <div class="corner-accent corner-bl" id="cornerBL"></div>
+        <div class="corner-accent corner-br" id="cornerBR"></div>
+        
+        <div class="scanline"></div>
+        <div class="noise"></div>
+        
+        <div class="guitar-container" id="guitarContainer">
+            <img src="./public/image/fender_guitar.png" alt="Electric Guitar" class="guitar-img" id="guitarImg">
+        </div>
+        
+        <div class="amp-container" id="ampContainer">
+            <img src="./public/image/amp.png" alt="Amplifier" class="amp-img" id="ampImg">
+        </div>
+        
+        <div class="linehead-container" id="lineheadGuitar">
+            <img src="./public/image/linehead.png" alt="Cable Connector" class="linehead-img" style="transform: rotate(135deg);">
+        </div>
+        
+        <div class="linehead-container" id="lineheadAmp">
+            <img src="./public/image/linehead.png" alt="Cable Connector" class="linehead-img" style="transform: rotate(-90deg);">
+        </div>
+        
+        <svg class="absolute top-0 left-0 w-full h-full pointer-events-none" style="z-index: 5;" id="cableSvg">
+            <defs>
+                <linearGradient id="cableGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#39ff14" stop-opacity="1" />
+                    <stop offset="50%" stop-color="#7fff00" stop-opacity="1" />
+                    <stop offset="100%" stop-color="#39ff14" stop-opacity="1" />
+                </linearGradient>
+            </defs>
+            <path id="cablePath" fill="none" stroke="url(#cableGradient)" stroke-width="6" stroke-linecap="round" class="line-glow" />
+            <path id="cablePathGlow" fill="none" stroke="#39ff14" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        
+        <div class="center-text" id="centerText">
+            <div id="promptText">
+                <h1 class="text-5xl font-black mb-4 text-glow-orange" style="font-family: 'Orbitron', monospace; color: #ff6b35; letter-spacing: 0.1em;">点击进行链接</h1>
+                <p class="text-xl" style="font-family: 'Rajdhani', sans-serif; color: #39ff14; opacity: 0.8;">CLICK TO CONNECT</p>
+            </div>
+            <div id="successText" style="display: none;">
+                <h1 class="text-6xl font-black text-glow" style="font-family: 'Orbitron', monospace; color: #39ff14; letter-spacing: 0.15em;">CONNECT SUCCESS!</h1>
+                <div class="mt-8" id="rockText" style="opacity: 0;">
+                    <p class="text-2xl" style="font-family: 'Rajdhani', sans-serif; color: #ff1493;">🔊 LET'S ROCK! 🔊</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-text" id="footerText">
+            <p style="font-family: 'Rajdhani', sans-serif; color: #666; font-size: 14px; letter-spacing: 0.2em;">ROCK STUDIO v1.0</p>
+        </div>
+    </div>
+    
+    <script>
+        let connected = false;
+        
+        function initAnimations() {
+            gsap.to('#orb1', {
+                x: 30, y: -30, scale: 1.1, duration: 8, repeat: -1, yoyo: true, ease: "sine.inOut"
+            });
+            gsap.to('#orb2', {
+                x: -20, y: 20, scale: 0.95, duration: 8, repeat: -1, yoyo: true, ease: "sine.inOut", delay: 2
+            });
+            gsap.to('#orb3', {
+                x: 20, y: 30, scale: 1.05, duration: 8, repeat: -1, yoyo: true, ease: "sine.inOut", delay: 4
+            });
+            
+            gsap.to('#neonBorder1', { opacity: 1, duration: 1, delay: 0.3 });
+            gsap.to('#neonBorder2', { opacity: 1, duration: 1, delay: 0.5 });
+            
+            gsap.to(['#cornerTL', '#cornerTR', '#cornerBL', '#cornerBR'], {
+                opacity: 1,
+                duration: 0.8,
+                delay: 0.7,
+                stagger: 0.1
+            });
+            
+            gsap.fromTo('#guitarContainer', 
+                { opacity: 0, x: -100, rotation: -20 },
+                { opacity: 1, x: 0, rotation: 0, duration: 0.8, ease: "elastic.out(1, 0.5)" }
+            );
+            
+            gsap.fromTo('#ampContainer', 
+                { opacity: 0, x: 100, rotation: 10 },
+                { opacity: 1, x: 0, rotation: 0, duration: 0.8, delay: 0.2, ease: "elastic.out(1, 0.5)" }
+            );
+            
+            gsap.to('#guitarImg', {
+                rotation: -3, y: -8, duration: 3, repeat: -1, yoyo: true, ease: "sine.inOut"
+            });
+            
+            gsap.to('#ampImg', {
+                y: 4, duration: 2, repeat: -1, yoyo: true, ease: "sine.inOut"
+            });
+            
+            // 接线头预晃动（初始状态隐藏，不显示）
+            gsap.to('#lineheadGuitar', {
+                rotation: -3, y: -8, duration: 3, repeat: -1, yoyo: true, ease: "sine.inOut"
+            });
+            
+            gsap.to('#lineheadAmp', {
+                y: 4, duration: 2, repeat: -1, yoyo: true, ease: "sine.inOut"
+            });
+            
+            gsap.fromTo('#promptText', 
+                { opacity: 0, y: 30 },
+                { opacity: 1, y: 0, duration: 0.8, delay: 0.5 }
+            );
+            
+            gsap.to('#promptText', {
+                scale: 1.05, duration: 2, repeat: -1, yoyo: true, ease: "sine.inOut", delay: 1.3
+            });
+            
+            gsap.to('#footerText', {
+                opacity: 0.5, duration: 1, delay: 1
+            });
+        }
+        
+        function animateConnection() {
+            const guitarPos = { x: 450, y: 625 };
+            const ampPos = { x: window.innerWidth - 330, y: window.innerHeight - 435 };
+            
+            gsap.set('#lineheadGuitar', { left: guitarPos.x - 30, top: guitarPos.y - 50 });
+            gsap.set('#lineheadAmp', { left: ampPos.x - 15, top: ampPos.y - 40 });
+            
+            const cablePath = document.getElementById('cablePath');
+            const cablePathGlow = document.getElementById('cablePathGlow');
+            const pathD = `M ${guitarPos.x} ${guitarPos.y} C ${guitarPos.x + 180} ${guitarPos.y + 80}, ${ampPos.x - 180} ${ampPos.y - 80}, ${ampPos.x} ${ampPos.y}`;
+            
+            cablePath.setAttribute('d', pathD);
+            cablePathGlow.setAttribute('d', pathD);
+            
+            const length = cablePath.getTotalLength();
+            cablePath.style.strokeDasharray = length;
+            cablePath.style.strokeDashoffset = length;
+            cablePathGlow.style.strokeDasharray = length;
+            cablePathGlow.style.strokeDashoffset = length;
+            
+            gsap.to('#promptText', { opacity: 0, y: -30, duration: 0.5 });
+            
+            setTimeout(() => {
+                document.getElementById('promptText').style.display = 'none';
+                document.getElementById('successText').style.display = 'block';
+                
+                gsap.fromTo('#successText', 
+                    { opacity: 0, scale: 0.5 },
+                    { opacity: 1, scale: 1, duration: 0.8, ease: "elastic.out(1, 0.5)", delay: 0.8 }
+                );
+                
+                gsap.to(cablePath, { strokeDashoffset: 0, duration: 1.5, ease: "power2.inOut", delay: 0.1 });
+                gsap.to(cablePathGlow, { strokeDashoffset: 0, duration: 1.5, ease: "power2.inOut", delay: 0.3 });
+                
+                gsap.fromTo('#lineheadGuitar', 
+                    { opacity: 0, scale: 0 },
+                    { opacity: 1, scale: 1, duration: 0.4, delay: 0.6, ease: "elastic.out(1, 0.5)" }
+                );
+                gsap.fromTo('#lineheadAmp', 
+                    { opacity: 0, scale: 0 },
+                    { opacity: 1, scale: 1, duration: 0.4, delay: 0.6, ease: "elastic.out(1, 0.5)" }
+                );
+                
+                gsap.to('#rockText', { opacity: 1, duration: 1, delay: 2.3 });
+                
+                gsap.to('#guitarImg', {
+                    x: [0, 8, 0],
+                    duration: 0.3,
+                    repeat: -1,
+                    ease: "sine.inOut",
+                    delay: 1.8
+                });
+                
+                gsap.to('#ampImg', {
+                    scale: [1, 1.02, 1],
+                    duration: 0.15,
+                    repeat: -1,
+                    ease: "sine.inOut",
+                    delay: 1.8
+                });
+                
+                // 接线头同步振动
+                gsap.to('#lineheadGuitar', {
+                    x: [0, 8, 0],
+                    duration: 0.3,
+                    repeat: -1,
+                    ease: "sine.inOut",
+                    delay: 1.8
+                });
+                
+                gsap.to('#lineheadAmp', {
+                    scale: [1, 1.02, 1],
+                    duration: 0.15,
+                    repeat: -1,
+                    ease: "sine.inOut",
+                    delay: 1.8
+                });
+                
+                gsap.to(cablePathGlow, {
+                    opacity: [0.3, 0.8, 0.3],
+                    duration: 0.5,
+                    repeat: -1,
+                    yoyo: true,
+                    delay: 2
+                });
+
+                // 连接成功后延迟3秒自动跳转到主页面
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 3000);
+            }, 500);
+        }
+        
+        document.getElementById('mainContainer').addEventListener('click', function() {
+            if (!connected) {
+                connected = true;
+                animateConnection();
+            }
+        });
+        
+        window.addEventListener('load', initAnimations);
+    </script>
+</body>
+</html>
